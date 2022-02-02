@@ -31,8 +31,6 @@ public class MovementComponent : MonoBehaviour
     public readonly int movementYHash = Animator.StringToHash("MovementY");
     public readonly int isJumpingHash = Animator.StringToHash("IsJumping");
     public readonly int isRunningHash = Animator.StringToHash("IsRunning");
-    public readonly int isFiringHash = Animator.StringToHash("IsFiring");
-    public readonly int isReloadingHash = Animator.StringToHash("IsReloading");
 
     private void Awake()
     {
@@ -128,18 +126,6 @@ public class MovementComponent : MonoBehaviour
     {
         lookInput = value.Get<Vector2>();
         // aiming up/down, adjust animations, have a mask to properly animate aim
-    }
-
-    public void OnReload(InputValue value)
-    {
-        playerController.isReloading = value.isPressed;
-        playerAnimator.SetBool(isReloadingHash, playerController.isReloading);
-    }
-
-    public void OnFire(InputValue value)
-    {
-        playerController.isFiring = value.isPressed;
-        playerAnimator.SetBool(isFiringHash, playerController.isFiring);
     }
 
     private void OnCollisionEnter(Collision collision)
