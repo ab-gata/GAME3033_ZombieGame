@@ -26,10 +26,11 @@ public struct WeaponStats {
     public float damage;
     public int bulletsInClip;
     public int clipSize;
+    public int totalBullets;
     public float fireStartDelay;
     public float fireRate;
     public float fireDistance;
-    public bool repeating; // hold down to keep shooting, TEMP
+    public bool repeating;
     public LayerMask weaponHitLayers;
 }
 
@@ -40,6 +41,9 @@ public class WeaponComponent : MonoBehaviour
     public WeaponStats weaponStats;
     protected WeaponHolder weaponHolder;
 
+    [SerializeField]
+    protected ParticleSystem firingEffect;
+
     public bool isFiring;
     public bool isRealoding;
 
@@ -48,17 +52,6 @@ public class WeaponComponent : MonoBehaviour
     private void Awake()
     {
         mainCamera = Camera.main;
-    }
-    // Start is called before the first frame update
-    void Start()
-    {
-
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 
     public void Initialize(WeaponHolder _weaponHolder)
@@ -84,11 +77,49 @@ public class WeaponComponent : MonoBehaviour
     {
         isFiring = false;
         CancelInvoke(nameof(FireWeapon));
+
+        if (firingEffect && firingEffect.isPlaying)
+        {
+            firingEffect.Stop();
+        }
     }
 
     protected virtual void FireWeapon()
     {
         weaponStats.bulletsInClip--;
         Debug.Log("FIRING WEAPON Bullets in clip : " + weaponStats.bulletsInClip);
+    }
+
+    public virtual void StartReloading()
+    {
+        isRealoding = true;
+        ReloadWeapon();
+    }
+
+    public virtual void StopReloading()
+    {
+        isRealoding = false;
+    }
+
+    protected virtual void ReloadWeapon()
+    {
+        // stop firing effect if there is one playing
+        if (firingEffect && firingEffect.isPlaying)
+        {
+            firingEffect.Stop();
+        }
+
+        int bulletsToReload = weaponStats.clipSize - weaponStats.totalBullets;
+
+        if (bulletsToReload < 0)
+        {
+            weaponStats.bulletsInClip = weaponStats.clipSize;
+            weaponStats.totalBullets -= weaponStats.clipSize;
+        }
+        else
+        {
+            weaponStats.bulletsInClip = weaponStats.totalBullets;
+            weaponStats.totalBullets = 0;
+        }
     }
 }
