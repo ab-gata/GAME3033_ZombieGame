@@ -31,6 +31,7 @@ public class MovementComponent : MonoBehaviour
     public readonly int movementYHash = Animator.StringToHash("MovementY");
     public readonly int isJumpingHash = Animator.StringToHash("IsJumping");
     public readonly int isRunningHash = Animator.StringToHash("IsRunning");
+    public readonly int verticalAimHash = Animator.StringToHash("VerticalAim");
 
     private void Awake()
     {
@@ -42,7 +43,10 @@ public class MovementComponent : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+        if (!GameManager.instance.cursorActive)
+        {
+            AppEvents.InvokeMouseCursorEnable(false);
+        }
     }
 
     // Update is called once per frame
@@ -64,11 +68,21 @@ public class MovementComponent : MonoBehaviour
 
         var angle = followTarget.transform.localEulerAngles.x;
 
+        float min = -60;
+        float max = 70.0f;
+        float range = max - min;
+        float offsetToZero = 0 - min;
+        float aimAngle = followTarget.transform.localEulerAngles.x;
+        aimAngle = (aimAngle > 180) ? aimAngle - 360 : aimAngle;
+        float val = (aimAngle + offsetToZero) / (range);
+
+        playerAnimator.SetFloat(verticalAimHash, val);
+
         if (angle > 180 && angle < 300)
         {
             angles.x = 300;
         }
-        else if(angle < 180 && angle > 70)
+        else if (angle < 180 && angle > 70)
         {
             angles.x = 70;
         }
@@ -108,7 +122,10 @@ public class MovementComponent : MonoBehaviour
 
     public void OnJump(InputValue value)
     {
-        if (playerController.isJumping) return;
+        if (playerController.isJumping) 
+        { 
+            return; 
+        }
 
         playerController.isJumping = value.isPressed;
         rigidbody.AddForce((transform.up + moveDirection) * jumpForce, ForceMode.Impulse);
@@ -128,13 +145,27 @@ public class MovementComponent : MonoBehaviour
         // aiming up/down, adjust animations, have a mask to properly animate aim
     }
 
+    private bool IsGroundCollision(ContactPoint[] contacts)
+    {
+        for (int i = 0; i < contacts.Length; i++)
+        {
+            if (1- contacts[i].normal.y < 0.1f)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void OnCollisionEnter(Collision collision)
     {
         if (!collision.gameObject.CompareTag("Ground") && !playerController.isJumping) return;
 
-        playerController.isJumping = false;
+        if (IsGroundCollision(collision.contacts))
+        {
+            playerController.isJumping = false;
+            playerAnimator.SetBool(isJumpingHash, false);
+        }
 
-        // Update animation
-        playerAnimator.SetBool(isJumpingHash, false);
     }
 }
